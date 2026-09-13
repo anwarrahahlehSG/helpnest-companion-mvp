@@ -24,9 +24,9 @@ export function InteractionLab({
       <div className="interactionLabHeader">
         <div>
           <h3>Companion interactions</h3>
-          <p>Trigger named actions that HelpNest can call later from real events.</p>
+          <p>Actions stay active so you can clearly inspect each animation.</p>
         </div>
-        <span className="interactionStatus">{interactionLabels[active]}</span>
+        <span className="interactionStatus">Active: {interactionLabels[active]}</span>
       </div>
       <div className="interactionButtons">
         {actions.map((action) => (
@@ -38,6 +38,12 @@ export function InteractionLab({
             {interactionLabels[action]}
           </button>
         ))}
+        <button
+          className={active === 'none' ? 'activeInteraction' : ''}
+          onClick={() => onTrigger('none')}
+        >
+          Stop / Idle
+        </button>
       </div>
     </div>
   )
