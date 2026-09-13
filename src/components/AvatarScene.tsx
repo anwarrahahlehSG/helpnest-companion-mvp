@@ -12,27 +12,28 @@ export function AvatarScene(props: {
 }) {
   return (
     <Canvas
-      camera={{ position: [0, .66, 5.25], fov: 34 }}
+      camera={{ position: [0, .58, 5.75], fov: 33 }}
       shadows
       dpr={[1.25, 2]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
     >
-      <ambientLight intensity={1.15} />
-      <directionalLight position={[3.8, 6.2, 5.0]} intensity={3.1} castShadow />
-      <directionalLight position={[-3.4, 3.2, 2.6]} intensity={1.35} color="#dcecff" />
-      <pointLight position={[0, 2.1, 3.6]} intensity={1.25} color="#77e9ff" />
-      <pointLight position={[2.0, .8, 1.8]} intensity={.65} color="#0b6cff" />
+      <ambientLight intensity={.82} />
+      <hemisphereLight intensity={.72} color="#ffffff" groundColor="#dbe8f8" />
+      <directionalLight position={[4.1, 5.8, 5.2]} intensity={2.35} castShadow />
+      <directionalLight position={[-3.8, 3.4, 2.8]} intensity={1.05} color="#d8ebff" />
+      <pointLight position={[-1.6, 1.9, 3.4]} intensity={.58} color="#b9f5ff" />
+      <pointLight position={[2.2, .8, 2.0]} intensity={.42} color="#2b78ff" />
 
       <Robot {...props} />
 
-      <ContactShadows position={[0, -1.18, 0]} opacity={.36} scale={4.5} blur={2.6} far={4.2} />
-      <Environment preset="studio" />
+      <ContactShadows position={[0, -1.24, 0]} opacity={.32} scale={4.8} blur={3.2} far={4.5} />
+      <Environment preset="apartment" environmentIntensity={.55} />
 
       <OrbitControls
         enableZoom={false}
         enablePan={false}
         enableRotate={false}
-        target={[0, .38, 0]}
+        target={[0, .42, 0]}
       />
     </Canvas>
   )
