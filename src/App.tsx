@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AvatarScene } from './components/AvatarScene'
 import { MiniGame } from './components/MiniGame'
 import type { CompanionState, Outfit } from './lib/types'
@@ -17,12 +17,47 @@ export default function App() {
   const [outfit, setOutfit] = useState<Outfit>('default')
   const [message, setMessage] = useState('')
   const [longWait, setLongWait] = useState(false)
+  const [requestComplete, setRequestComplete] = useState(false)
+  const [pendingOutcome, setPendingOutcome] = useState<CompanionState>('success')
+  const stateRef = useRef<CompanionState>('idle')
+  const requestTimer = useRef<number | null>(null)
+  const longWaitTimer = useRef<number | null>(null)
+
+  useEffect(() => { stateRef.current = state }, [state])
+
+  const clearSimulationTimers = () => {
+    if (requestTimer.current) window.clearTimeout(requestTimer.current)
+    if (longWaitTimer.current) window.clearTimeout(longWaitTimer.current)
+    requestTimer.current = null
+    longWaitTimer.current = null
+  }
 
   const simulate = (ms: number, outcome: CompanionState = 'success') => {
-    setState('loading'); setLongWait(false)
-    window.setTimeout(() => setLongWait(true), 3500)
-    window.setTimeout(() => { setState(outcome); setLongWait(false) }, ms)
+    clearSimulationTimers()
+    setPendingOutcome(outcome)
+    setRequestComplete(false)
+    setState('loading')
+    setLongWait(false)
+
+    longWaitTimer.current = window.setTimeout(() => setLongWait(true), 3500)
+    requestTimer.current = window.setTimeout(() => {
+      setRequestComplete(true)
+      setLongWait(false)
+      if (stateRef.current !== 'game') setState(outcome)
+    }, ms)
   }
+
+  const finishGame = () => {
+    setRequestComplete(false)
+    setState(pendingOutcome)
+  }
+
+  const closeGame = () => {
+    if (requestComplete) finishGame()
+    else setState('loading')
+  }
+
+  useEffect(() => () => clearSimulationTimers(), [])
 
   useEffect(() => {
     if (!message) return
@@ -48,18 +83,18 @@ export default function App() {
         <div className="attention"><b>Things needing your attention</b><div>Laptop Replacement <span>Awaiting your approval</span><button>Review</button></div><div>VPN Access <span>Information required</span><button>View</button></div></div>
       </section>
       <section className="lab">
-        <div className="labCard"><h3>MVP controls</h3><button onClick={()=>simulate(800)}>Fast load</button><button onClick={()=>simulate(7000)}>Slow load</button><button onClick={()=>simulate(2500,'error')}>Error</button><button onClick={()=>simulate(2500,'offline')}>Offline</button><button onClick={()=>setState('idle')}>Reset</button></div>
+        <div className="labCard"><h3>MVP controls</h3><button onClick={()=>simulate(800)}>Fast load</button><button onClick={()=>simulate(12000)}>Slow load</button><button onClick={()=>simulate(2500,'error')}>Error</button><button onClick={()=>simulate(2500,'offline')}>Offline</button><button onClick={()=>{clearSimulationTimers();setRequestComplete(false);setState('idle')}}>Reset</button></div>
         <div className="labCard"><h3>Avatar outfit</h3><select value={outfit} onChange={e=>setOutfit(e.target.value as Outfit)}><option value="default">Default HelpNest</option><option value="saudi-red">Saudi — red shemagh</option><option value="saudi-white">Saudi — white ghutra</option></select><p>Click the bot to test interaction.</p></div>
       </section>
     </main>
 
-    {state !== 'idle' && <div className="overlay">{state === 'game' ? <MiniGame outfit={outfit} onExit={()=>setState('loading')} /> : <div className="modal">
+    {state !== 'idle' && <div className="overlay">{state === 'game' ? <MiniGame outfit={outfit} requestComplete={requestComplete} onContinue={finishGame} onExit={closeGame} /> : <div className="modal">
       <div className="modalAvatar"><AvatarScene state={state} outfit={outfit} onPoke={()=>setMessage('That tickles 😄')} /></div>
       <h2>{stateText[state].title}</h2><p>{stateText[state].body}</p>
       {state==='loading' && <div className="progress"><div /></div>}
       {state==='loading' && longWait && <button className="primary" onClick={()=>setState('game')}>🎮 Play while waiting</button>}
-      {(state==='error'||state==='offline') && <div className="actions"><button className="primary" onClick={()=>simulate(3000)}>Retry</button><button onClick={()=>setState('game')}>Keep playing</button></div>}
-      {state==='success' && <button className="primary" onClick={()=>setState('idle')}>Continue</button>}
+      {(state==='error'||state==='offline') && <div className="actions"><button className="primary" onClick={()=>simulate(5000)}>Retry</button><button onClick={()=>{setRequestComplete(false);setPendingOutcome('success');setState('game')}}>Keep playing</button></div>}
+      {state==='success' && <button className="primary" onClick={()=>{setRequestComplete(false);setState('idle')}}>Continue</button>}
     </div>}</div>}
   </div>
 }
