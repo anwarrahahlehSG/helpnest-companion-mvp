@@ -1,3 +1,4 @@
+import './ExperienceSettings.css'
 import type { CompanionSettings, CompanionPersonality } from '../lib/companionSettings'
 
 type Props = {
@@ -5,6 +6,8 @@ type Props = {
   onChange: (next: CompanionSettings) => void
   onClose: () => void
 }
+
+type BooleanSettingKey = 'enabled' | 'showDuringLoading' | 'allowInteraction' | 'enableMiniGames' | 'showOnErrors' | 'allowSound'
 
 const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) => (
   <button
@@ -22,6 +25,15 @@ export function ExperienceSettings({ settings, onChange, onClose }: Props) {
     onChange({ ...settings, [key]: value })
   }
 
+  const toggles: Array<[string, BooleanSettingKey]> = [
+    ['Enable HelpNest Companion', 'enabled'],
+    ['Show during loading', 'showDuringLoading'],
+    ['Allow interaction', 'allowInteraction'],
+    ['Enable mini games', 'enableMiniGames'],
+    ['Show on errors', 'showOnErrors'],
+    ['Allow sound', 'allowSound'],
+  ]
+
   const personalities: CompanionPersonality[] = ['professional', 'friendly', 'playful']
 
   return (
@@ -37,17 +49,10 @@ export function ExperienceSettings({ settings, onChange, onClose }: Props) {
         </header>
 
         <div className="settingsSection">
-          {[
-            ['Enable HelpNest Companion', 'enabled'],
-            ['Show during loading', 'showDuringLoading'],
-            ['Allow interaction', 'allowInteraction'],
-            ['Enable mini games', 'enableMiniGames'],
-            ['Show on errors', 'showOnErrors'],
-            ['Allow sound', 'allowSound'],
-          ].map(([label, key]) => (
+          {toggles.map(([label, key]) => (
             <div className="settingRow" key={key}>
               <span>{label}</span>
-              <Toggle checked={settings[key as keyof CompanionSettings] as boolean} onChange={(value) => set(key as keyof CompanionSettings, value as never)} />
+              <Toggle checked={settings[key]} onChange={(value) => set(key, value)} />
             </div>
           ))}
         </div>
@@ -92,7 +97,7 @@ export function ExperienceSettings({ settings, onChange, onClose }: Props) {
         </div>
 
         <footer className="settingsFooter">
-          <span>Changes apply immediately in this MVP.</span>
+          <span>Changes apply immediately and are saved in this browser.</span>
           <button className="primary" onClick={onClose}>Done</button>
         </footer>
       </section>
