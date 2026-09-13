@@ -53,7 +53,7 @@ export default function App() {
       </section>
     </main>
 
-    {state !== 'idle' && <div className="overlay">{state === 'game' ? <MiniGame onExit={()=>setState('loading')} /> : <div className="modal">
+    {state !== 'idle' && <div className="overlay">{state === 'game' ? <MiniGame outfit={outfit} onExit={()=>setState('loading')} /> : <div className="modal">
       <div className="modalAvatar"><AvatarScene state={state} outfit={outfit} onPoke={()=>setMessage('That tickles 😄')} /></div>
       <h2>{stateText[state].title}</h2><p>{stateText[state].body}</p>
       {state==='loading' && <div className="progress"><div /></div>}
