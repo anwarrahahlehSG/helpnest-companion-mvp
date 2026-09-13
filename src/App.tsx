@@ -75,18 +75,26 @@ export default function App() {
     setInteraction('none')
   }
 
-  const triggerInteraction = (next: CompanionInteraction) => {
-    if (!settings.enabled || !settings.allowInteraction) return
+  const triggerInteraction = (next: CompanionInteraction, force = false) => {
+    if (!settings.enabled) return
+    if (!force && !settings.allowInteraction) return
     if (interactionTimer.current) window.clearTimeout(interactionTimer.current)
+    interactionTimer.current = null
     setState('idle')
     setInteraction(next)
     setMessage(interactionMessages[next])
-    const duration = interactionDurations[next]
-    if (duration > 0) {
-      interactionTimer.current = window.setTimeout(() => {
-        setInteraction('none')
-        setMessage('')
-      }, duration)
+
+    // Developer/MVP interaction lab actions remain active until another
+    // action is selected or Stop / Idle is pressed. End-user interactions
+    // can still use the configured duration.
+    if (!force) {
+      const duration = interactionDurations[next]
+      if (duration > 0) {
+        interactionTimer.current = window.setTimeout(() => {
+          setInteraction('none')
+          setMessage('')
+        }, duration)
+      }
     }
   }
 
@@ -235,7 +243,7 @@ export default function App() {
             </select>
             <p>Click the bot to test interaction.</p>
           </div>
-          <InteractionLab active={interaction} onTrigger={triggerInteraction} />
+          <InteractionLab active={interaction} onTrigger={(next) => triggerInteraction(next, true)} />
         </section>
       </main>
 
