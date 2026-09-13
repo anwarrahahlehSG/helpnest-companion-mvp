@@ -1,5 +1,8 @@
+import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, Environment, OrbitControls } from '@react-three/drei'
+import { CompanionModel } from './CompanionModel'
+import { ModelErrorBoundary } from './ModelErrorBoundary'
 import { Robot } from './Robot'
 import type { CompanionInteraction } from '../lib/interactions'
 import type { CompanionState, Outfit } from '../lib/types'
@@ -10,6 +13,8 @@ export function AvatarScene(props: {
   interaction?: CompanionInteraction
   onPoke?: () => void
 }) {
+  const fallback = <Robot {...props} />
+
   return (
     <Canvas
       camera={{ position: [0, .34, 6.35], fov: 31 }}
@@ -24,17 +29,16 @@ export function AvatarScene(props: {
       <pointLight position={[-1.6, 1.9, 3.4]} intensity={.58} color="#b9f5ff" />
       <pointLight position={[2.2, .8, 2.0]} intensity={.42} color="#2b78ff" />
 
-      <Robot {...props} />
+      <ModelErrorBoundary fallback={fallback}>
+        <Suspense fallback={fallback}>
+          <CompanionModel {...props} />
+        </Suspense>
+      </ModelErrorBoundary>
 
-      <ContactShadows position={[0, -1.27, 0]} opacity={.32} scale={4.8} blur={3.2} far={4.5} />
+      <ContactShadows position={[0, -1.34, 0]} opacity={.32} scale={4.8} blur={3.2} far={4.5} />
       <Environment preset="apartment" environmentIntensity={.55} />
 
-      <OrbitControls
-        enableZoom={false}
-        enablePan={false}
-        enableRotate={false}
-        target={[0, .30, 0]}
-      />
+      <OrbitControls enableZoom={false} enablePan={false} enableRotate={false} target={[0, .28, 0]} />
     </Canvas>
   )
 }
