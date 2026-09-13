@@ -12,6 +12,15 @@ const stateText: Record<CompanionState, { title: string; body: string }> = {
   game: { title: 'HelpNest Quest', body: 'Catch requests while you wait.' }
 }
 
+const companionText: Record<CompanionState, string> = {
+  idle: 'Need anything?',
+  loading: "I'm working on it…",
+  success: 'All done! 🎉',
+  error: 'Hmm… let me help.',
+  offline: 'Checking the connection…',
+  game: 'Have fun! 🎮',
+}
+
 export default function App() {
   const [state, setState] = useState<CompanionState>('idle')
   const [outfit, setOutfit] = useState<Outfit>('default')
@@ -70,8 +79,8 @@ export default function App() {
       <div className="brand">⬢ <span>HelpNest</span></div>
       <div className="navList">{['Home','Services','My Requests','Approvals','Knowledge','Reports','Settings'].map((x,i)=><div className={'nav '+(i===0?'active':'')} key={x}>{x}</div>)}</div>
       <div className="sidebarCompanion">
-        <div className="sidebarBubble">{message || 'Need anything?'}<span className="sidebarBubbleTail" /></div>
-        <div className="sidebarAvatar"><AvatarScene state={state} outfit={outfit} onPoke={()=>setMessage('Hey! 👋')} /></div>
+        <div className="sidebarBubble">{message || companionText[state]}<span className="sidebarBubbleTail" /></div>
+        <div className="sidebarAvatar"><AvatarScene state={state} outfit={outfit} onPoke={()=>setMessage('Hi! 👋')} /></div>
       </div>
     </aside>
 
