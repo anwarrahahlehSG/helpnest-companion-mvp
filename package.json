@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "generate:model": "node scripts/generate-companion-model.mjs",
+    "predev": "npm run generate:model",
     "dev": "vite",
+    "prebuild": "npm run generate:model",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
