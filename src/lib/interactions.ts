@@ -36,15 +36,18 @@ export const interactionMessages: Record<CompanionInteraction, string> = {
   celebration: 'We did it! 🎉',
 }
 
+// MVP interaction lab: actions remain active until another action is selected
+// or Idle/Stop is pressed. Later, real HelpNest events can supply their own
+// completion/timeout policy.
 export const interactionDurations: Record<CompanionInteraction, number> = {
   none: 0,
-  wave: 2200,
-  dance: 4200,
-  'high-five': 2600,
-  thinking: 4200,
-  typing: 5000,
-  sleeping: 6000,
-  excited: 3200,
-  sad: 4200,
-  celebration: 4200,
+  wave: 0,
+  dance: 0,
+  'high-five': 0,
+  thinking: 0,
+  typing: 0,
+  sleeping: 0,
+  excited: 0,
+  sad: 0,
+  celebration: 0,
 }
