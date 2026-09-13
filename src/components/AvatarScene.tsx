@@ -11,27 +11,28 @@ export function AvatarScene(props: {
   onPoke?: () => void
 }) {
   return (
-    <Canvas camera={{ position: [0, .62, 5.45], fov: 36 }} shadows dpr={[1, 1.75]}>
-      <ambientLight intensity={1.65} />
-      <directionalLight position={[3.5, 5.5, 4.5]} intensity={2.4} castShadow />
-      <directionalLight position={[-4, 2.8, 2]} intensity={1.0} color="#cfe7ff" />
-      <pointLight position={[0, 1.7, 3]} intensity={.65} color="#8edbff" />
+    <Canvas
+      camera={{ position: [0, .66, 5.25], fov: 34 }}
+      shadows
+      dpr={[1.25, 2]}
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+    >
+      <ambientLight intensity={1.15} />
+      <directionalLight position={[3.8, 6.2, 5.0]} intensity={3.1} castShadow />
+      <directionalLight position={[-3.4, 3.2, 2.6]} intensity={1.35} color="#dcecff" />
+      <pointLight position={[0, 2.1, 3.6]} intensity={1.25} color="#77e9ff" />
+      <pointLight position={[2.0, .8, 1.8]} intensity={.65} color="#0b6cff" />
 
       <Robot {...props} />
 
-      <ContactShadows position={[0, -1.18, 0]} opacity={.30} scale={4.8} blur={3.0} />
-      <Environment preset="city" />
+      <ContactShadows position={[0, -1.18, 0]} opacity={.36} scale={4.5} blur={2.6} far={4.2} />
+      <Environment preset="studio" />
 
-      {/*
-        The companion is a UI character, not a free-orbit 3D viewer.
-        Keep the camera locked to the front so wave/high-five/etc. always
-        read correctly and the robot cannot accidentally remain backwards.
-      */}
       <OrbitControls
         enableZoom={false}
         enablePan={false}
         enableRotate={false}
-        target={[0, .35, 0]}
+        target={[0, .38, 0]}
       />
     </Canvas>
   )
