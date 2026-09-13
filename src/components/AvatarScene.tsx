@@ -1,9 +1,15 @@
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, Environment, OrbitControls } from '@react-three/drei'
 import { Robot } from './Robot'
+import type { CompanionInteraction } from '../lib/interactions'
 import type { CompanionState, Outfit } from '../lib/types'
 
-export function AvatarScene(props: { state: CompanionState; outfit: Outfit; onPoke?: () => void }) {
+export function AvatarScene(props: {
+  state: CompanionState
+  outfit: Outfit
+  interaction?: CompanionInteraction
+  onPoke?: () => void
+}) {
   return (
     <Canvas camera={{ position: [0, .62, 5.45], fov: 36 }} shadows dpr={[1, 1.75]}>
       <ambientLight intensity={1.65} />
