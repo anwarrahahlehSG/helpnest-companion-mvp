@@ -31,7 +31,7 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
     const t = clock.getElapsedTime()
     const active = interaction !== 'none'
     const wideGesture = interaction === 'wave' || interaction === 'high-five' || interaction === 'dance' || interaction === 'excited' || interaction === 'celebration'
-    const targetScale = wideGesture ? .82 : .92
+    const targetScale = wideGesture ? .80 : .90
 
     root.scale.setScalar(MathUtils.lerp(root.scale.x, targetScale, .12))
     root.rotation.x = MathUtils.lerp(root.rotation.x, 0, .14)
@@ -41,8 +41,8 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
 
     if (head && !active) {
       head.rotation.z = MathUtils.lerp(head.rotation.z, 0, .12)
-      head.rotation.y = MathUtils.lerp(head.rotation.y, state === 'idle' ? pointer.x * .08 : 0, .07)
-      head.rotation.x = MathUtils.lerp(head.rotation.x, state === 'idle' ? -pointer.y * .04 : 0, .07)
+      head.rotation.y = MathUtils.lerp(head.rotation.y, state === 'idle' ? pointer.x * .07 : 0, .07)
+      head.rotation.x = MathUtils.lerp(head.rotation.x, state === 'idle' ? -pointer.y * .035 : 0, .07)
     }
 
     if (leftArm && !active) {
@@ -54,46 +54,43 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
       rightArm.rotation.z = MathUtils.lerp(rightArm.rotation.z, .08, .12)
     }
 
-    // Keep the original friendly face. Only add subtle life: blinking and gentle eye tracking.
-    const blinkPhase = t % 4.6
-    const blinkScale = interaction === 'sleeping' ? .10 : blinkPhase > 4.40 ? .10 : 1
-    const gazeX = !active && state === 'idle' ? pointer.x * .025 : 0
-    const gazeY = !active && state === 'idle' ? -pointer.y * .012 : 0
+    const blinkPhase = t % 4.8
+    const blinkScale = interaction === 'sleeping' ? .08 : blinkPhase > 4.58 ? .08 : 1
+    const gazeX = !active && state === 'idle' ? pointer.x * .018 : 0
+    const gazeY = !active && state === 'idle' ? -pointer.y * .008 : 0
 
     if (leftEye) {
-      leftEye.scale.x = MathUtils.lerp(leftEye.scale.x, 1.08, .25)
-      leftEye.scale.y = MathUtils.lerp(leftEye.scale.y, .92 * blinkScale, .34)
-      leftEye.position.x = MathUtils.lerp(leftEye.position.x, -.28 + gazeX, .18)
-      leftEye.position.y = MathUtils.lerp(leftEye.position.y, .07 + gazeY, .18)
+      leftEye.scale.y = MathUtils.lerp(leftEye.scale.y, blinkScale, .34)
+      leftEye.position.x = MathUtils.lerp(leftEye.position.x, -.31 + gazeX, .18)
+      leftEye.position.y = MathUtils.lerp(leftEye.position.y, .10 + gazeY, .18)
     }
     if (rightEye) {
-      rightEye.scale.x = MathUtils.lerp(rightEye.scale.x, 1.08, .25)
-      rightEye.scale.y = MathUtils.lerp(rightEye.scale.y, .92 * blinkScale, .34)
-      rightEye.position.x = MathUtils.lerp(rightEye.position.x, .28 + gazeX, .18)
-      rightEye.position.y = MathUtils.lerp(rightEye.position.y, .07 + gazeY, .18)
+      rightEye.scale.y = MathUtils.lerp(rightEye.scale.y, blinkScale, .34)
+      rightEye.position.x = MathUtils.lerp(rightEye.position.x, .31 + gazeX, .18)
+      rightEye.position.y = MathUtils.lerp(rightEye.position.y, .10 + gazeY, .18)
     }
 
     if (state === 'idle' && !active) root.position.y = Math.sin(t * 1.35) * .018
 
     if (state === 'loading' && !active) {
       root.position.y = Math.sin(t * 2.5) * .025
-      if (head) head.rotation.y = Math.sin(t * 1.7) * .05
+      if (head) head.rotation.y = Math.sin(t * 1.7) * .045
     }
 
     if (state === 'success' && !active) {
       root.position.y = Math.abs(Math.sin(t * 4.4)) * .065
-      if (leftArm) leftArm.rotation.z = -.66
-      if (rightArm) rightArm.rotation.z = .66
+      if (leftArm) leftArm.rotation.z = -.62
+      if (rightArm) rightArm.rotation.z = .62
     }
 
     if (interaction === 'wave' && rightArm) {
-      rightArm.rotation.z = .88 + Math.sin(t * 10) * .12
+      rightArm.rotation.z = .84 + Math.sin(t * 10) * .11
       rightArm.rotation.x = -.18
     }
 
     if (interaction === 'high-five' && rightArm) {
-      rightArm.rotation.z = .98
-      rightArm.rotation.x = -.68
+      rightArm.rotation.z = .94
+      rightArm.rotation.x = -.66
     }
 
     if (interaction === 'dance') {
@@ -101,31 +98,31 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
       root.position.y = .03 + Math.abs(Math.sin(t * 4.2)) * .04
       root.rotation.z = Math.sin(t * 6) * .05
       if (head) head.rotation.y = Math.sin(t * 4) * .05
-      if (leftArm) leftArm.rotation.z = -.46 - Math.sin(t * 7) * .16
-      if (rightArm) rightArm.rotation.z = .46 + Math.sin(t * 7) * .16
+      if (leftArm) leftArm.rotation.z = -.44 - Math.sin(t * 7) * .15
+      if (rightArm) rightArm.rotation.z = .44 + Math.sin(t * 7) * .15
     }
 
     if (interaction === 'thinking') {
       if (head) {
-        head.rotation.z = -.05
-        head.rotation.y = .06 + Math.sin(t * 1.8) * .02
+        head.rotation.z = -.045
+        head.rotation.y = .055 + Math.sin(t * 1.8) * .018
       }
       if (rightArm) {
-        rightArm.rotation.z = .62
-        rightArm.rotation.x = -.44
+        rightArm.rotation.z = .58
+        rightArm.rotation.x = -.42
       }
     }
 
     if (interaction === 'typing') {
       if (leftArm) {
-        leftArm.rotation.z = -.28
-        leftArm.rotation.x = -.62
+        leftArm.rotation.z = -.26
+        leftArm.rotation.x = -.60
       }
       if (rightArm) {
-        rightArm.rotation.z = .28
-        rightArm.rotation.x = -.62
+        rightArm.rotation.z = .26
+        rightArm.rotation.x = -.60
       }
-      if (head) head.rotation.x = .06 + Math.sin(t * 3) * .012
+      if (head) head.rotation.x = .055 + Math.sin(t * 3) * .010
     }
 
     if (interaction === 'sleeping') {
@@ -139,9 +136,9 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
 
     if (interaction === 'excited' || interaction === 'celebration') {
       root.position.y = Math.abs(Math.sin(t * 4.8)) * .08
-      if (head) head.rotation.z = Math.sin(t * 5) * .02
-      if (leftArm) leftArm.rotation.z = -.66
-      if (rightArm) rightArm.rotation.z = .66
+      if (head) head.rotation.z = Math.sin(t * 5) * .018
+      if (leftArm) leftArm.rotation.z = -.62
+      if (rightArm) rightArm.rotation.z = .62
     }
 
     if (interaction === 'sad') {
@@ -157,7 +154,7 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
     onPoke?.()
   }
 
-  return <group ref={rootRef} onClick={poke} scale={.92}><primitive object={model as Object3D} /></group>
+  return <group ref={rootRef} onClick={poke} scale={.90}><primitive object={model as Object3D} /></group>
 }
 
 useGLTF.preload(MODEL_URL)
