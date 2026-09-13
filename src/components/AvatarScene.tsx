@@ -12,7 +12,7 @@ export function AvatarScene(props: {
 }) {
   return (
     <Canvas
-      camera={{ position: [0, .58, 5.75], fov: 33 }}
+      camera={{ position: [0, .34, 6.35], fov: 31 }}
       shadows
       dpr={[1.25, 2]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
@@ -26,14 +26,14 @@ export function AvatarScene(props: {
 
       <Robot {...props} />
 
-      <ContactShadows position={[0, -1.24, 0]} opacity={.32} scale={4.8} blur={3.2} far={4.5} />
+      <ContactShadows position={[0, -1.27, 0]} opacity={.32} scale={4.8} blur={3.2} far={4.5} />
       <Environment preset="apartment" environmentIntensity={.55} />
 
       <OrbitControls
         enableZoom={false}
         enablePan={false}
         enableRotate={false}
-        target={[0, .42, 0]}
+        target={[0, .30, 0]}
       />
     </Canvas>
   )
