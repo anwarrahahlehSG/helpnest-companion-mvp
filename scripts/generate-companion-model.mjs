@@ -3,97 +3,11 @@ import path from 'node:path'
 import * as THREE from 'three'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
-
-if (typeof globalThis.FileReader === 'undefined') {
-  globalThis.FileReader = class FileReader {
-    result=null; onloadend=null; onerror=null
-    readAsArrayBuffer(blob){blob.arrayBuffer().then(b=>{this.result=b;this.onloadend?.({target:this})}).catch(e=>this.onerror?.(e))}
-    readAsDataURL(blob){blob.arrayBuffer().then(b=>{this.result=`data:${blob.type||'application/octet-stream'};base64,${Buffer.from(b).toString('base64')}`;this.onloadend?.({target:this})}).catch(e=>this.onerror?.(e))}
-  }
-}
-
+if(typeof globalThis.FileReader==='undefined'){globalThis.FileReader=class FileReader{result=null;onloadend=null;onerror=null;readAsArrayBuffer(b){b.arrayBuffer().then(x=>{this.result=x;this.onloadend?.({target:this})}).catch(e=>this.onerror?.(e))}readAsDataURL(b){b.arrayBuffer().then(x=>{this.result=`data:${b.type||'application/octet-stream'};base64,${Buffer.from(x).toString('base64')}`;this.onloadend?.({target:this})}).catch(e=>this.onerror?.(e))}}}
 const WHITE=0xfbfefe,SOFT=0xeaf2fb,BLUE=0x0d6cff,BLUE_DARK=0x063d9a,CYAN=0x8bf8ff,VISOR=0x05111f,JOINT=0x15283f,GLOVE=0x152a45
-const shell=new THREE.MeshPhysicalMaterial({color:WHITE,roughness:.10,metalness:.03,clearcoat:1,clearcoatRoughness:.035})
-const soft=new THREE.MeshPhysicalMaterial({color:SOFT,roughness:.18,clearcoat:.78})
-const blue=new THREE.MeshPhysicalMaterial({color:BLUE,roughness:.09,metalness:.22,clearcoat:1})
-const deepBlue=new THREE.MeshPhysicalMaterial({color:BLUE_DARK,roughness:.08,metalness:.36,clearcoat:1})
-const visor=new THREE.MeshPhysicalMaterial({color:VISOR,roughness:.035,metalness:.48,clearcoat:1,clearcoatRoughness:.02})
-const joint=new THREE.MeshPhysicalMaterial({color:JOINT,roughness:.16,metalness:.42})
-const glove=new THREE.MeshPhysicalMaterial({color:GLOVE,roughness:.14,metalness:.32,clearcoat:.60})
-const cyan=new THREE.MeshStandardMaterial({color:CYAN,emissive:CYAN,emissiveIntensity:2.2,toneMapped:false})
-const glass=new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:.10,roughness:.01,clearcoat:1})
-
-function mesh(geometry,material,name,position=[0,0,0],rotation=[0,0,0],scale=[1,1,1]){const m=new THREE.Mesh(geometry,material);m.name=name;m.position.set(...position);m.rotation.set(...rotation);m.scale.set(...scale);m.castShadow=true;m.receiveShadow=true;return m}
-function glowRing(radius,name,tube=.023){return mesh(new THREE.TorusGeometry(radius,tube,16,48),cyan,name,[0,0,0],[Math.PI/2,0,0])}
-function arc(radius,tube,arcLength,name,position,rotation=[0,0,0],scale=[1,1,1]){return mesh(new THREE.TorusGeometry(radius,tube,12,40,arcLength),cyan,name,position,rotation,scale)}
-
-function makeHand(side){
-  const s=side<0?'L':'R',g=new THREE.Group();g.name=`Hand_${s}`
-  g.add(mesh(new THREE.SphereGeometry(.215,34,26),glove,`Palm_${s}`,[0,0,0],[0,0,0],[1.08,.98,.78]))
-  const xs=[-.12,-.04,.04,.12]
-  xs.forEach((x,i)=>g.add(mesh(new THREE.CapsuleGeometry(.043,.105,6,12),glove,`Finger${i+1}_${s}`,[x,-.18,.06],[0,0,(i-1.5)*.07])))
-  g.add(mesh(new THREE.CapsuleGeometry(.052,.12,6,12),glove,`Thumb_${s}`,[side*.20,-.02,.07],[0,0,side*.78]))
-  return g
-}
-
-function makeArm(side){
-  const s=side<0?'L':'R',rig=new THREE.Group();rig.name=`ArmRig_${s}`;rig.position.set(side*.84,.49,.04)
-  rig.add(mesh(new THREE.SphereGeometry(.22,34,26),joint,`ShoulderJoint_${s}`))
-  rig.add(mesh(new THREE.SphereGeometry(.21,32,24),shell,`ShoulderShell_${s}`,[side*.02,-.02,.01],[0,0,0],[1.22,.86,1.10]))
-  const sr=glowRing(.168,`ShoulderGlow_${s}`,.022);sr.position.set(0,-.20,.02);rig.add(sr)
-  rig.add(mesh(new THREE.CapsuleGeometry(.14,.31,8,18),shell,`UpperArm_${s}`,[side*.03,-.39,.045],[0,0,side*-.05]))
-  rig.add(mesh(new THREE.SphereGeometry(.125,28,22),joint,`Elbow_${s}`,[side*.04,-.65,.08]))
-  const er=glowRing(.13,`ElbowGlow_${s}`,.022);er.position.set(side*.04,-.65,.08);rig.add(er)
-  rig.add(mesh(new THREE.CapsuleGeometry(.125,.29,8,18),soft,`Forearm_${s}`,[side*.07,-.94,.13],[0,0,side*-.04]))
-  const wr=glowRing(.122,`WristGlow_${s}`,.018);wr.position.set(side*.09,-1.14,.20);rig.add(wr)
-  const hand=makeHand(side);hand.position.set(side*.11,-1.29,.28);rig.add(hand)
-  return rig
-}
-
-function makeLeg(side){
-  const s=side<0?'L':'R',g=new THREE.Group();g.name=`LegRig_${s}`;g.position.set(side*.33,-.57,0)
-  g.add(mesh(new THREE.SphereGeometry(.17,28,22),joint,`Hip_${s}`))
-  const hr=glowRing(.17,`HipGlow_${s}`,.022);g.add(hr)
-  g.add(mesh(new THREE.CapsuleGeometry(.18,.36,8,18),shell,`Thigh_${s}`,[0,-.34,.03]))
-  g.add(mesh(new THREE.SphereGeometry(.125,26,20),joint,`Knee_${s}`,[0,-.62,.05]))
-  const kr=glowRing(.13,`KneeGlow_${s}`,.018);kr.position.set(0,-.62,.05);g.add(kr)
-  g.add(mesh(new THREE.CapsuleGeometry(.165,.32,8,18),soft,`Shin_${s}`,[0,-.86,.09]))
-  const ar=glowRing(.155,`AnkleGlow_${s}`,.022);ar.position.set(0,-1.10,.09);g.add(ar)
-  g.add(mesh(new THREE.SphereGeometry(.245,34,26),shell,`Boot_${s}`,[0,-1.26,.22],[0,0,0],[1.55,.88,1.90]))
-  g.add(mesh(new THREE.SphereGeometry(.225,30,24),deepBlue,`Sole_${s}`,[0,-1.41,.24],[0,0,0],[1.54,.28,1.70]))
-  const br=glowRing(.265,`BootGlow_${s}`,.019);br.position.set(0,-1.34,.22);g.add(br)
-  return g
-}
-
-const root=new THREE.Group();root.name='HelpNestCompanion'
-
-const head=new THREE.Group();head.name='HeadRig';head.position.set(0,1.54,0)
-head.add(mesh(new RoundedBoxGeometry(1.86,1.38,.98,12,.40),shell,'HeadShell'))
-head.add(mesh(new RoundedBoxGeometry(1.70,1.12,.18,12,.34),blue,'VisorOuter',[0,0,.50]))
-head.add(mesh(new RoundedBoxGeometry(1.56,.98,.13,12,.30),deepBlue,'VisorInner',[0,0,.58]))
-head.add(mesh(new RoundedBoxGeometry(1.46,.88,.09,12,.27),visor,'Visor',[0,0,.66]))
-head.add(mesh(new RoundedBoxGeometry(.92,.14,.02,8,.07),glass,'VisorHighlight',[-.16,.30,.715],[0,0,-.07]))
-
-const leftEye=new THREE.Group();leftEye.name='Eye_L';leftEye.position.set(-.31,.10,.715);leftEye.add(arc(.12,.028,Math.PI,'EyeArc_L',[0,0,0],[0,0,0],[1.15,.78,1]));head.add(leftEye)
-const rightEye=new THREE.Group();rightEye.name='Eye_R';rightEye.position.set(.31,.10,.715);rightEye.add(arc(.12,.028,Math.PI,'EyeArc_R',[0,0,0],[0,0,0],[1.15,.78,1]));head.add(rightEye)
-const smile=new THREE.Group();smile.name='MouthSmile';smile.position.set(0,-.20,.718);smile.add(arc(.23,.029,Math.PI,'SmileArc',[0,0,0],[0,0,Math.PI],[1,.72,1]));head.add(smile)
-
-for(const side of [-1,1]){const s=side<0?'L':'R';head.add(mesh(new THREE.CylinderGeometry(.25,.25,.18,36),deepBlue,`Ear_${s}`,[side*1.01,0,0],[0,0,Math.PI/2]));head.add(mesh(new THREE.CylinderGeometry(.17,.17,.05,32),cyan,`EarGlow_${s}`,[side*1.11,0,0],[0,0,Math.PI/2]))}
-head.add(mesh(new THREE.CylinderGeometry(.022,.026,.31,12),joint,'AntennaStem',[.44,.82,-.03],[0,0,-.10]))
-head.add(mesh(new THREE.SphereGeometry(.075,20,16),cyan,'AntennaTip',[.47,1.00,-.03]))
-root.add(head)
-
-root.add(mesh(new THREE.CylinderGeometry(.25,.27,.19,32),joint,'Neck',[0,.80,0]))
-const ng=glowRing(.265,'NeckGlow',.027);ng.position.set(0,.90,0);root.add(ng)
-root.add(mesh(new RoundedBoxGeometry(1.26,1.42,.86,10,.38),shell,'Torso',[0,.05,0]))
-root.add(mesh(new RoundedBoxGeometry(.96,.96,.12,9,.26),soft,'ChestPanel',[0,.18,.48]))
-root.add(mesh(new RoundedBoxGeometry(.065,.33,.04,5,.03),cyan,'ChestLight',[0,-.09,.56]))
-
-const logo=new THREE.Group();logo.name='HNLogo';logo.position.set(0,.36,.57)
-logo.add(mesh(new THREE.BoxGeometry(.055,.25,.03),blue,'H1',[-.13,0,0]));logo.add(mesh(new THREE.BoxGeometry(.055,.25,.03),blue,'H2',[-.03,0,0]));logo.add(mesh(new THREE.BoxGeometry(.15,.05,.03),blue,'HBar',[-.08,0,0]));logo.add(mesh(new THREE.BoxGeometry(.055,.25,.03),blue,'N1',[.08,0,0]));logo.add(mesh(new THREE.BoxGeometry(.055,.25,.03),blue,'N2',[.19,0,0]));logo.add(mesh(new THREE.BoxGeometry(.055,.27,.03),blue,'NDiag',[.135,0,0],[0,0,-.46]));root.add(logo)
-
-for(const side of [-1,1]){root.add(mesh(new THREE.SphereGeometry(.16,26,20),joint,`WaistJoint_${side<0?'L':'R'}`,[side*.50,-.47,0]));const r=glowRing(.17,`WaistGlow_${side<0?'L':'R'}`,.022);r.position.set(side*.50,-.47,0);root.add(r)}
-root.add(makeArm(-1));root.add(makeArm(1));root.add(makeLeg(-1));root.add(makeLeg(1))
-
-const exporter=new GLTFExporter(),outDir=path.resolve('public/models');fs.mkdirSync(outDir,{recursive:true})
-exporter.parse(root,(result)=>{const buffer=Buffer.from(result);fs.writeFileSync(path.join(outDir,'helpnest-companion.glb'),buffer);console.log(`Generated HelpNest companion model: ${Math.round(buffer.length/1024)} KB`)},(error)=>{console.error(error);process.exitCode=1},{binary:true,onlyVisible:true,trs:false})
+const shell=new THREE.MeshPhysicalMaterial({color:WHITE,roughness:.10,metalness:.03,clearcoat:1,clearcoatRoughness:.035}),soft=new THREE.MeshPhysicalMaterial({color:SOFT,roughness:.18,clearcoat:.78}),blue=new THREE.MeshPhysicalMaterial({color:BLUE,roughness:.09,metalness:.22,clearcoat:1}),deepBlue=new THREE.MeshPhysicalMaterial({color:BLUE_DARK,roughness:.08,metalness:.36,clearcoat:1}),visor=new THREE.MeshPhysicalMaterial({color:VISOR,roughness:.035,metalness:.48,clearcoat:1,clearcoatRoughness:.02}),joint=new THREE.MeshPhysicalMaterial({color:JOINT,roughness:.16,metalness:.42}),glove=new THREE.MeshPhysicalMaterial({color:GLOVE,roughness:.14,metalness:.32,clearcoat:.60}),cyan=new THREE.MeshStandardMaterial({color:CYAN,emissive:CYAN,emissiveIntensity:2.2,toneMapped:false}),glass=new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:.10,roughness:.01,clearcoat:1})
+function mesh(g,m,n,p=[0,0,0],r=[0,0,0],s=[1,1,1]){const x=new THREE.Mesh(g,m);x.name=n;x.position.set(...p);x.rotation.set(...r);x.scale.set(...s);x.castShadow=true;x.receiveShadow=true;return x}function ring(rad,n,t=.023){return mesh(new THREE.TorusGeometry(rad,t,16,48),cyan,n,[0,0,0],[Math.PI/2,0,0])}function arc(rad,t,a,n,p,r=[0,0,0],s=[1,1,1]){return mesh(new THREE.TorusGeometry(rad,t,14,48,a),cyan,n,p,r,s)}
+function hand(side){const s=side<0?'L':'R',g=new THREE.Group();g.name=`Hand_${s}`;g.add(mesh(new THREE.SphereGeometry(.235,36,28),glove,`Palm_${s}`,[0,0,0],[0,0,0],[1.12,1.02,.80]));[-.13,-.043,.043,.13].forEach((x,i)=>g.add(mesh(new THREE.CapsuleGeometry(.048,.12,7,14),glove,`Finger${i+1}_${s}`,[x,-.19,.065],[0,0,(i-1.5)*.075])));g.add(mesh(new THREE.CapsuleGeometry(.058,.14,7,14),glove,`Thumb_${s}`,[side*.22,-.015,.075],[0,0,side*.80]));return g}
+function arm(side){const s=side<0?'L':'R',g=new THREE.Group();g.name=`ArmRig_${s}`;g.position.set(side*.88,.50,.06);g.add(mesh(new THREE.SphereGeometry(.235,36,28),joint,`ShoulderJoint_${s}`));g.add(mesh(new THREE.SphereGeometry(.225,34,26),shell,`ShoulderShell_${s}`,[side*.025,-.015,.015],[0,0,0],[1.25,.88,1.12]));let q=ring(.18,`ShoulderGlow_${s}`,.023);q.position.set(0,-.21,.025);g.add(q);g.add(mesh(new THREE.CapsuleGeometry(.15,.34,9,20),shell,`UpperArm_${s}`,[side*.03,-.42,.06],[0,0,side*-.05]));g.add(mesh(new THREE.SphereGeometry(.135,30,24),joint,`Elbow_${s}`,[side*.045,-.70,.10]));q=ring(.14,`ElbowGlow_${s}`,.022);q.position.set(side*.045,-.70,.10);g.add(q);g.add(mesh(new THREE.CapsuleGeometry(.135,.32,9,20),soft,`Forearm_${s}`,[side*.075,-1.00,.16],[0,0,side*-.04]));q=ring(.132,`WristGlow_${s}`,.019);q.position.set(side*.10,-1.22,.23);g.add(q);const h=hand(side);h.position.set(side*.12,-1.38,.33);g.add(h);return g}
+function leg(side){const s=side<0?'L':'R',g=new THREE.Group();g.name=`LegRig_${s}`;g.position.set(side*.35,-.60,0);g.add(mesh(new THREE.SphereGeometry(.18,30,24),joint,`Hip_${s}`));let q=ring(.18,`HipGlow_${s}`,.023);g.add(q);g.add(mesh(new THREE.CapsuleGeometry(.19,.39,9,20),shell,`Thigh_${s}`,[0,-.37,.04]));g.add(mesh(new THREE.SphereGeometry(.135,28,22),joint,`Knee_${s}`,[0,-.68,.07]));q=ring(.14,`KneeGlow_${s}`,.019);q.position.set(0,-.68,.07);g.add(q);g.add(mesh(new THREE.CapsuleGeometry(.175,.36,9,20),soft,`Shin_${s}`,[0,-.95,.11]));q=ring(.165,`AnkleGlow_${s}`,.023);q.position.set(0,-1.22,.12);g.add(q);g.add(mesh(new THREE.SphereGeometry(.27,38,30),shell,`Boot_${s}`,[0,-1.40,.29],[0,0,0],[1.62,.92,2.05]));g.add(mesh(new THREE.SphereGeometry(.245,34,26),deepBlue,`Sole_${s}`,[0,-1.57,.31],[0,0,0],[1.60,.29,1.82]));q=ring(.29,`BootGlow_${s}`,.020);q.position.set(0,-1.49,.29);g.add(q);return g}
+const root=new THREE.Group();root.name='HelpNestCompanion';const head=new THREE.Group();head.name='HeadRig';head.position.set(0,1.62,0);head.add(mesh(new RoundedBoxGeometry(1.94,1.44,1.02,14,.44),shell,'HeadShell'));head.add(mesh(new RoundedBoxGeometry(1.78,1.17,.19,14,.37),blue,'VisorOuter',[0,0,.52]));head.add(mesh(new RoundedBoxGeometry(1.63,1.02,.14,14,.32),deepBlue,'VisorInner',[0,0,.605]));head.add(mesh(new RoundedBoxGeometry(1.52,.91,.10,14,.29),visor,'Visor',[0,0,.69]));head.add(mesh(new RoundedBoxGeometry(.98,.14,.02,10,.07),glass,'VisorHighlight',[-.17,.31,.747],[0,0,-.07]));for(const [name,x] of [['Eye_L',-.32],['Eye_R',.32]]){const e=new THREE.Group();e.name=name;e.position.set(x,.11,.748);e.add(arc(.13,.031,Math.PI,`${name}Arc`,[0,0,0],[0,0,0],[1.18,.82,1]));head.add(e)}const sm=new THREE.Group();sm.name='MouthSmile';sm.position.set(0,-.22,.75);sm.add(arc(.25,.032,Math.PI,'SmileArc',[0,0,0],[0,0,Math.PI],[1,.76,1]));head.add(sm);for(const side of [-1,1]){const s=side<0?'L':'R';head.add(mesh(new THREE.CylinderGeometry(.27,.27,.19,40),deepBlue,`Ear_${s}`,[side*1.055,0,0],[0,0,Math.PI/2]));head.add(mesh(new THREE.CylinderGeometry(.18,.18,.052,36),cyan,`EarGlow_${s}`,[side*1.16,0,0],[0,0,Math.PI/2]))}head.add(mesh(new THREE.CylinderGeometry(.023,.027,.33,12),joint,'AntennaStem',[.46,.86,-.03],[0,0,-.10]));head.add(mesh(new THREE.SphereGeometry(.078,22,18),cyan,'AntennaTip',[.49,1.05,-.03]));root.add(head);root.add(mesh(new THREE.CylinderGeometry(.26,.28,.20,34),joint,'Neck',[0,.83,0]));let q=ring(.275,'NeckGlow',.028);q.position.set(0,.94,0);root.add(q);root.add(mesh(new RoundedBoxGeometry(1.36,1.48,.92,12,.42),shell,'Torso',[0,.06,0]));root.add(mesh(new RoundedBoxGeometry(1.03,1.00,.13,10,.29),soft,'ChestPanel',[0,.20,.51]));root.add(mesh(new RoundedBoxGeometry(.07,.35,.045,6,.032),cyan,'ChestLight',[0,-.10,.60]));const logo=new THREE.Group();logo.name='HNLogo';logo.position.set(0,.39,.61);logo.add(mesh(new THREE.BoxGeometry(.058,.27,.035),blue,'H1',[-.14,0,0]));logo.add(mesh(new THREE.BoxGeometry(.058,.27,.035),blue,'H2',[-.035,0,0]));logo.add(mesh(new THREE.BoxGeometry(.16,.052,.035),blue,'HBar',[-.087,0,0]));logo.add(mesh(new THREE.BoxGeometry(.058,.27,.035),blue,'N1',[.085,0,0]));logo.add(mesh(new THREE.BoxGeometry(.058,.27,.035),blue,'N2',[.20,0,0]));logo.add(mesh(new THREE.BoxGeometry(.058,.29,.035),blue,'NDiag',[.142,0,0],[0,0,-.46]));root.add(logo);for(const side of [-1,1]){root.add(mesh(new THREE.SphereGeometry(.17,28,22),joint,`WaistJoint_${side<0?'L':'R'}`,[side*.54,-.51,0]));q=ring(.18,`WaistGlow_${side<0?'L':'R'}`,.023);q.position.set(side*.54,-.51,0);root.add(q)}root.add(arm(-1));root.add(arm(1));root.add(leg(-1));root.add(leg(1));const exporter=new GLTFExporter(),out=path.resolve('public/models');fs.mkdirSync(out,{recursive:true});exporter.parse(root,r=>{const b=Buffer.from(r);fs.writeFileSync(path.join(out,'helpnest-companion.glb'),b);console.log(`Generated HelpNest companion model: ${Math.round(b.length/1024)} KB`)},e=>{console.error(e);process.exitCode=1},{binary:true,onlyVisible:true,trs:false})
