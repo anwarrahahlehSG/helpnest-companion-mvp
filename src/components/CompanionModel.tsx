@@ -27,7 +27,12 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
     if (!root) return
     const t = clock.getElapsedTime()
     const active = interaction !== 'none'
+    const wideGesture = interaction === 'wave' || interaction === 'high-five' || interaction === 'dance' || interaction === 'excited' || interaction === 'celebration'
+    const targetScale = wideGesture ? .82 : .92
 
+    root.scale.x = MathUtils.lerp(root.scale.x, targetScale, .12)
+    root.scale.y = MathUtils.lerp(root.scale.y, targetScale, .12)
+    root.scale.z = MathUtils.lerp(root.scale.z, targetScale, .12)
     root.rotation.x = MathUtils.lerp(root.rotation.x, 0, .14)
     root.rotation.y = MathUtils.lerp(root.rotation.y, 0, .16)
     root.rotation.z = MathUtils.lerp(root.rotation.z, 0, .14)
@@ -55,24 +60,24 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
     }
     if (state === 'success' && !active) {
       root.position.y = Math.abs(Math.sin(t * 4.4)) * .065
-      if (leftArm) leftArm.rotation.z = -.72
-      if (rightArm) rightArm.rotation.z = .72
+      if (leftArm) leftArm.rotation.z = -.66
+      if (rightArm) rightArm.rotation.z = .66
     }
 
     if (interaction === 'wave' && rightArm) {
-      rightArm.rotation.z = 1.08 + Math.sin(t * 10) * .14
+      rightArm.rotation.z = .88 + Math.sin(t * 10) * .12
       rightArm.rotation.x = -.18
     }
     if (interaction === 'high-five' && rightArm) {
-      rightArm.rotation.z = 1.16
-      rightArm.rotation.x = -.72
+      rightArm.rotation.z = .98
+      rightArm.rotation.x = -.68
     }
     if (interaction === 'dance') {
-      root.position.x = Math.sin(t * 4) * .04
+      root.position.x = Math.sin(t * 4) * .035
       root.position.y = .03 + Math.abs(Math.sin(t * 4.2)) * .04
       root.rotation.z = Math.sin(t * 6) * .05
-      if (leftArm) leftArm.rotation.z = -.55 - Math.sin(t * 7) * .20
-      if (rightArm) rightArm.rotation.z = .55 + Math.sin(t * 7) * .20
+      if (leftArm) leftArm.rotation.z = -.46 - Math.sin(t * 7) * .16
+      if (rightArm) rightArm.rotation.z = .46 + Math.sin(t * 7) * .16
     }
     if (interaction === 'thinking') {
       if (head) {
@@ -105,8 +110,8 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
     }
     if (interaction === 'excited' || interaction === 'celebration') {
       root.position.y = Math.abs(Math.sin(t * 4.8)) * .08
-      if (leftArm) leftArm.rotation.z = -.78
-      if (rightArm) rightArm.rotation.z = .78
+      if (leftArm) leftArm.rotation.z = -.66
+      if (rightArm) rightArm.rotation.z = .66
     }
     if (interaction === 'sad') {
       root.position.y = -.04
@@ -121,7 +126,7 @@ export function CompanionModel({ state, interaction = 'none', onPoke }: Props) {
     onPoke?.()
   }
 
-  return <group ref={rootRef} onClick={poke}><primitive object={model as Object3D} /></group>
+  return <group ref={rootRef} onClick={poke} scale={.92}><primitive object={model as Object3D} /></group>
 }
 
 useGLTF.preload(MODEL_URL)
