@@ -18,6 +18,7 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
 
     const t = clock.getElapsedTime()
     const waving = performance.now() < waveUntil.current
+    const autoGreeting = state === 'idle' && (t % 13.5) > 11.7
 
     robot.rotation.x *= .9
     robot.rotation.z *= .9
@@ -43,6 +44,7 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
       leftEyeRef.current.scale.y = MathUtils.lerp(leftEyeRef.current.scale.y, eyeY, .35)
       leftEyeRef.current.rotation.z = state === 'error' ? .38 : 0
     }
+
     if (rightEyeRef.current) {
       rightEyeRef.current.scale.x = MathUtils.lerp(rightEyeRef.current.scale.x, eyeX, .2)
       rightEyeRef.current.scale.y = MathUtils.lerp(rightEyeRef.current.scale.y, eyeY, .35)
@@ -58,7 +60,7 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
         const targetX = -pointer.y * .13 + Math.sin(t * .4) * .015
         headRef.current.rotation.y = MathUtils.lerp(headRef.current.rotation.y, targetY, .08)
         headRef.current.rotation.x = MathUtils.lerp(headRef.current.rotation.x, targetX, .08)
-        headRef.current.rotation.z = MathUtils.lerp(headRef.current.rotation.z, 0, .1)
+        headRef.current.rotation.z = MathUtils.lerp(headRef.current.rotation.z, Math.sin(t * .35) * .01, .1)
       }
 
       if (leftArmRef.current) leftArmRef.current.rotation.z = .25 + Math.sin(t * 1.2) * .025
@@ -125,13 +127,14 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
       if (rightArmRef.current) rightArmRef.current.rotation.z = -.42 - Math.sin(t * 7 + Math.PI) * .18
     }
 
-    if (waving && rightArmRef.current) {
-      rightArmRef.current.rotation.z = -1.75 + Math.sin(t * 13) * .22
+    if ((waving || autoGreeting) && rightArmRef.current) {
+      rightArmRef.current.rotation.z = -1.72 + Math.sin(t * 13) * .23
     }
   })
 
   const robe = outfit !== 'default'
   const clothColor = outfit === 'saudi-red' ? '#d92f45' : '#fafafa'
+  const clothSecondary = outfit === 'saudi-red' ? '#fff4f4' : '#f4f4f4'
 
   const poke = (e: { stopPropagation: () => void }) => {
     e.stopPropagation()
@@ -147,7 +150,6 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
           <meshStandardMaterial color="#f5f8ff" metalness={.12} roughness={.3} />
         </mesh>
 
-        {/* Face display deliberately sits on the front surface of the head. */}
         <mesh position={[0, 1.29, .695]} scale={[1, .78, 1]}>
           <boxGeometry args={[1.02, .61, .055]} />
           <meshStandardMaterial color="#061a34" metalness={.28} roughness={.18} />
@@ -175,21 +177,28 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
         )}
 
         {robe && <>
-          {/* Ghutra / shemagh cap stays behind the face instead of covering it. */}
-          <mesh position={[0, 1.78, -.13]} scale={[1, .22, .82]}>
+          <mesh position={[0, 1.79, -.12]} scale={[1, .24, .86]}>
             <sphereGeometry args={[.72, 36, 36]} />
-            <meshStandardMaterial color={clothColor} roughness={.78} />
-          </mesh>
-          <mesh position={[-.55, 1.36, -.24]} rotation={[0, 0, -.12]}>
-            <boxGeometry args={[.28, .82, .08]} />
             <meshStandardMaterial color={clothColor} roughness={.82} />
           </mesh>
-          <mesh position={[.55, 1.36, -.24]} rotation={[0, 0, .12]}>
-            <boxGeometry args={[.28, .82, .08]} />
-            <meshStandardMaterial color={clothColor} roughness={.82} />
+
+          <mesh position={[-.48, 1.47, -.30]} rotation={[.10, .05, -.20]} scale={[.72, 1.2, .48]}>
+            <capsuleGeometry args={[.18, .56, 8, 20]} />
+            <meshStandardMaterial color={clothColor} roughness={.86} />
           </mesh>
-          <mesh position={[0, 1.82, -.02]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[.5, .055, 12, 40]} />
+
+          <mesh position={[.48, 1.47, -.30]} rotation={[.10, -.05, .20]} scale={[.72, 1.2, .48]}>
+            <capsuleGeometry args={[.18, .56, 8, 20]} />
+            <meshStandardMaterial color={clothColor} roughness={.86} />
+          </mesh>
+
+          <mesh position={[0, 1.56, -.50]} rotation={[.22, 0, 0]} scale={[1.02, .68, .40]}>
+            <sphereGeometry args={[.50, 30, 30]} />
+            <meshStandardMaterial color={clothSecondary} roughness={.9} />
+          </mesh>
+
+          <mesh position={[0, 1.83, -.015]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[.50, .055, 12, 40]} />
             <meshStandardMaterial color="#121212" roughness={.65} />
           </mesh>
         </>}
@@ -197,9 +206,9 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
 
       {robe ? (
         <>
-          <mesh position={[0, .12, 0]}>
-            <cylinderGeometry args={[.46, .61, 1.28, 32]} />
-            <meshStandardMaterial color="#fff" roughness={.58} />
+          <mesh position={[0, .08, 0]}>
+            <cylinderGeometry args={[.45, .62, 1.34, 32]} />
+            <meshStandardMaterial color="#fff" roughness={.6} />
           </mesh>
           <mesh position={[0, .68, 0]} scale={[1.04, .65, .92]}>
             <capsuleGeometry args={[.43, .42, 8, 24]} />
@@ -207,7 +216,7 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
           </mesh>
         </>
       ) : (
-        <mesh position={[0, .22, 0]}>
+        <mesh position={[0, .22, 0]} scale={[1.03, 1.02, 1]}>
           <capsuleGeometry args={[.48, .8, 8, 24]} />
           <meshStandardMaterial color="#eaf1ff" roughness={.45} />
         </mesh>
@@ -223,6 +232,10 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
           <capsuleGeometry args={[.14, .65, 6, 18]} />
           <meshStandardMaterial color={robe ? '#fff' : '#f5f8ff'} roughness={.42} />
         </mesh>
+        <mesh position={[0, -.42, 0]}>
+          <sphereGeometry args={[.17, 24, 24]} />
+          <meshStandardMaterial color="#f7faff" roughness={.4} />
+        </mesh>
       </group>
 
       <group ref={rightArmRef} position={[.66, .38, 0]} rotation={[0, 0, -.25]}>
@@ -230,16 +243,33 @@ export function Robot({ state, outfit, onPoke }: { state: CompanionState; outfit
           <capsuleGeometry args={[.14, .65, 6, 18]} />
           <meshStandardMaterial color={robe ? '#fff' : '#f5f8ff'} roughness={.42} />
         </mesh>
+        <mesh position={[0, -.42, 0]}>
+          <sphereGeometry args={[.17, 24, 24]} />
+          <meshStandardMaterial color="#f7faff" roughness={.4} />
+        </mesh>
       </group>
 
-      <mesh position={[-.3, -.72, 0]}>
-        <capsuleGeometry args={[.16, .55, 6, 18]} />
-        <meshStandardMaterial color="#e9eef9" />
-      </mesh>
-      <mesh position={[.3, -.72, 0]}>
-        <capsuleGeometry args={[.16, .55, 6, 18]} />
-        <meshStandardMaterial color="#e9eef9" />
-      </mesh>
+      <group position={[-.3, -.70, 0]}>
+        <mesh>
+          <capsuleGeometry args={[.16, .48, 6, 18]} />
+          <meshStandardMaterial color="#e9eef9" />
+        </mesh>
+        <mesh position={[0, -.34, .08]} scale={[1.25, .65, 1.55]}>
+          <sphereGeometry args={[.18, 24, 24]} />
+          <meshStandardMaterial color="#dfe7f5" roughness={.55} />
+        </mesh>
+      </group>
+
+      <group position={[.3, -.70, 0]}>
+        <mesh>
+          <capsuleGeometry args={[.16, .48, 6, 18]} />
+          <meshStandardMaterial color="#e9eef9" />
+        </mesh>
+        <mesh position={[0, -.34, .08]} scale={[1.25, .65, 1.55]}>
+          <sphereGeometry args={[.18, 24, 24]} />
+          <meshStandardMaterial color="#dfe7f5" roughness={.55} />
+        </mesh>
+      </group>
     </group>
   )
 }
