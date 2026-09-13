@@ -13,12 +13,7 @@ const stateText: Record<CompanionState, { title: string; body: string }> = {
 }
 
 const companionText: Record<CompanionState, string> = {
-  idle: 'Need anything?',
-  loading: "I'm working on it…",
-  success: 'All done! 🎉',
-  error: 'Hmm… let me help.',
-  offline: 'Checking the connection…',
-  game: 'Have fun! 🎮',
+  idle: 'Need anything?', loading: "I'm working on it…", success: 'All done! 🎉', error: 'Hmm… let me help.', offline: 'Checking the connection…', game: 'Have fun! 🎮'
 }
 
 export default function App() {
@@ -28,57 +23,44 @@ export default function App() {
   const [longWait, setLongWait] = useState(false)
   const [requestComplete, setRequestComplete] = useState(false)
   const [pendingOutcome, setPendingOutcome] = useState<CompanionState>('success')
+  const [guideMode, setGuideMode] = useState(false)
   const stateRef = useRef<CompanionState>('idle')
   const requestTimer = useRef<number | null>(null)
   const longWaitTimer = useRef<number | null>(null)
+  const guideTimer = useRef<number | null>(null)
 
   useEffect(() => { stateRef.current = state }, [state])
 
   const clearSimulationTimers = () => {
     if (requestTimer.current) window.clearTimeout(requestTimer.current)
     if (longWaitTimer.current) window.clearTimeout(longWaitTimer.current)
-    requestTimer.current = null
-    longWaitTimer.current = null
+    requestTimer.current = null; longWaitTimer.current = null
   }
 
   const simulate = (ms: number, outcome: CompanionState = 'success') => {
-    clearSimulationTimers()
-    setPendingOutcome(outcome)
-    setRequestComplete(false)
-    setState('loading')
-    setLongWait(false)
-
+    clearSimulationTimers(); setPendingOutcome(outcome); setRequestComplete(false); setGuideMode(false); setState('loading'); setLongWait(false)
     longWaitTimer.current = window.setTimeout(() => setLongWait(true), 3500)
-    requestTimer.current = window.setTimeout(() => {
-      setRequestComplete(true)
-      setLongWait(false)
-      if (stateRef.current !== 'game') setState(outcome)
-    }, ms)
+    requestTimer.current = window.setTimeout(() => { setRequestComplete(true); setLongWait(false); if (stateRef.current !== 'game') setState(outcome) }, ms)
   }
 
-  const finishGame = () => {
-    setRequestComplete(false)
-    setState(pendingOutcome)
+  const finishGame = () => { setRequestComplete(false); setState(pendingOutcome) }
+  const closeGame = () => { if (requestComplete) finishGame(); else setState('loading') }
+
+  const guideToApproval = () => {
+    if (guideTimer.current) window.clearTimeout(guideTimer.current)
+    setGuideMode(true)
+    setMessage('This approval needs you 👈')
+    guideTimer.current = window.setTimeout(() => { setGuideMode(false); setMessage('') }, 6500)
   }
 
-  const closeGame = () => {
-    if (requestComplete) finishGame()
-    else setState('loading')
-  }
-
-  useEffect(() => () => clearSimulationTimers(), [])
-
-  useEffect(() => {
-    if (!message) return
-    const id = window.setTimeout(() => setMessage(''), 1800)
-    return () => clearTimeout(id)
-  }, [message])
+  useEffect(() => () => { clearSimulationTimers(); if (guideTimer.current) window.clearTimeout(guideTimer.current) }, [])
+  useEffect(() => { if (!message || guideMode) return; const id = window.setTimeout(() => setMessage(''), 1800); return () => clearTimeout(id) }, [message, guideMode])
 
   return <div className="appShell">
     <aside className="sidebar">
       <div className="brand">⬢ <span>HelpNest</span></div>
       <div className="navList">{['Home','Services','My Requests','Approvals','Knowledge','Reports','Settings'].map((x,i)=><div className={'nav '+(i===0?'active':'')} key={x}>{x}</div>)}</div>
-      <div className="sidebarCompanion">
+      <div className={`sidebarCompanion${guideMode ? ' guideHome' : ''}`}>
         <div className="sidebarBubble">{message || companionText[state]}<span className="sidebarBubbleTail" /></div>
         <div className="sidebarAvatar"><AvatarScene state={state} outfit={outfit} onPoke={()=>setMessage('Hi! 👋')} /></div>
       </div>
@@ -89,19 +71,19 @@ export default function App() {
       <section className="hero">
         <div><h1>Good morning, Anwar</h1><p>How can we help you today?</p></div>
         <div className="cards"><div>🖥️<b>Report an Issue</b><span>Get help with a problem</span></div><div>🛒<b>Request Something</b><span>Browse the service catalog</span></div><div>📋<b>My Requests</b><span>Track your submissions</span></div></div>
-        <div className="attention"><b>Things needing your attention</b><div>Laptop Replacement <span>Awaiting your approval</span><button>Review</button></div><div>VPN Access <span>Information required</span><button>View</button></div></div>
+        <div className={`attention${guideMode ? ' guideTarget' : ''}`}><b>Things needing your attention</b><div className="approvalRow">Laptop Replacement <span>Awaiting your approval</span><button onClick={()=>setMessage('Opening the approval…')}>Review</button></div><div>VPN Access <span>Information required</span><button>View</button></div></div>
       </section>
       <section className="lab">
-        <div className="labCard"><h3>MVP controls</h3><button onClick={()=>simulate(800)}>Fast load</button><button onClick={()=>simulate(12000)}>Slow load</button><button onClick={()=>simulate(2500,'error')}>Error</button><button onClick={()=>simulate(2500,'offline')}>Offline</button><button onClick={()=>{clearSimulationTimers();setRequestComplete(false);setState('idle')}}>Reset</button></div>
+        <div className="labCard"><h3>MVP controls</h3><button onClick={()=>simulate(800)}>Fast load</button><button onClick={()=>simulate(12000)}>Slow load</button><button onClick={()=>simulate(2500,'error')}>Error</button><button onClick={()=>simulate(2500,'offline')}>Offline</button><button onClick={guideToApproval}>Guide me</button><button onClick={()=>{clearSimulationTimers();setRequestComplete(false);setGuideMode(false);setState('idle')}}>Reset</button></div>
         <div className="labCard"><h3>Avatar outfit</h3><select value={outfit} onChange={e=>setOutfit(e.target.value as Outfit)}><option value="default">Default HelpNest</option><option value="saudi-red">Saudi — red shemagh</option><option value="saudi-white">Saudi — white ghutra</option></select><p>Click the bot to test interaction.</p></div>
       </section>
     </main>
 
+    {guideMode && <div className="floatingGuide" aria-live="polite"><div className="guideRobot"><AvatarScene state="idle" outfit={outfit} /></div><div className="guideCallout"><strong>This needs your attention</strong><span>Laptop Replacement is awaiting your approval.</span><button onClick={()=>{setGuideMode(false);setMessage('Great — let’s review it.')}}>Review now</button></div><div className="guidePointer">➜</div></div>}
+
     {state !== 'idle' && <div className="overlay">{state === 'game' ? <MiniGame outfit={outfit} requestComplete={requestComplete} onContinue={finishGame} onExit={closeGame} /> : <div className="modal">
-      <div className="modalAvatar"><AvatarScene state={state} outfit={outfit} onPoke={()=>setMessage('That tickles 😄')} /></div>
-      <h2>{stateText[state].title}</h2><p>{stateText[state].body}</p>
-      {state==='loading' && <div className="progress"><div /></div>}
-      {state==='loading' && longWait && <button className="primary" onClick={()=>setState('game')}>🎮 Play while waiting</button>}
+      <div className="modalAvatar"><AvatarScene state={state} outfit={outfit} onPoke={()=>setMessage('That tickles 😄')} /></div><h2>{stateText[state].title}</h2><p>{stateText[state].body}</p>
+      {state==='loading' && <div className="progress"><div /></div>}{state==='loading' && longWait && <button className="primary" onClick={()=>setState('game')}>🎮 Play while waiting</button>}
       {(state==='error'||state==='offline') && <div className="actions"><button className="primary" onClick={()=>simulate(5000)}>Retry</button><button onClick={()=>{setRequestComplete(false);setPendingOutcome('success');setState('game')}}>Keep playing</button></div>}
       {state==='success' && <button className="primary" onClick={()=>{setRequestComplete(false);setState('idle')}}>Continue</button>}
     </div>}</div>}
