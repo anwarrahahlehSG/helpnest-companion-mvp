@@ -1,0 +1,28 @@
+.sidebarCompanion {
+  height: 330px;
+  padding-top: 72px;
+  justify-content: flex-end;
+  overflow: visible;
+}
+
+.sidebarAvatar {
+  width: 220px;
+  height: 250px;
+  overflow: visible;
+}
+
+.sidebarBubble {
+  top: 4px;
+  min-width: 150px;
+  max-width: 188px;
+  padding: 10px 14px;
+  line-height: 1.25;
+}
+
+.sidebarBubbleTail {
+  bottom: -7px;
+}
+
+.sidebarAvatar canvas {
+  overflow: visible !important;
+}
