@@ -122,7 +122,7 @@ export function Robot({ state, outfit, interaction = 'none', onPoke }: Props) {
     robot.rotation.z = MathUtils.lerp(robot.rotation.z, 0, .12)
 
     if (interaction !== 'none') {
-      robot.rotation.y = MathUtils.lerp(robot.rotation.y, 0, .22)
+      robot.rotation.y = MathUtils.lerp(robot.rotation.y, 0, .35)
     }
 
     if (leftArmRef.current) {
@@ -168,21 +168,23 @@ export function Robot({ state, outfit, interaction = 'none', onPoke }: Props) {
 
     if (state === 'idle') {
       robot.position.y = Math.sin(t * 1.45) * .028
-      if (interaction === 'none') robot.rotation.y = Math.sin(t * .55) * .025
-      if (headRef.current) {
-        const targetY = pointer.x * .20 + Math.sin(t * .65) * .025
-        const targetX = -pointer.y * .10 + Math.sin(t * .4) * .01
-        headRef.current.rotation.y = MathUtils.lerp(headRef.current.rotation.y, targetY, .08)
-        headRef.current.rotation.x = MathUtils.lerp(headRef.current.rotation.x, targetX, .08)
-        headRef.current.rotation.z = MathUtils.lerp(headRef.current.rotation.z, Math.sin(t * .35) * .008, .1)
+      if (interaction === 'none') {
+        robot.rotation.y = Math.sin(t * .55) * .025
+        if (headRef.current) {
+          const targetY = pointer.x * .20 + Math.sin(t * .65) * .025
+          const targetX = -pointer.y * .10 + Math.sin(t * .4) * .01
+          headRef.current.rotation.y = MathUtils.lerp(headRef.current.rotation.y, targetY, .08)
+          headRef.current.rotation.x = MathUtils.lerp(headRef.current.rotation.x, targetX, .08)
+          headRef.current.rotation.z = MathUtils.lerp(headRef.current.rotation.z, Math.sin(t * .35) * .008, .1)
+        }
+        if (leftArmRef.current) leftArmRef.current.rotation.z = .16 + Math.sin(t * 1.2) * .02
+        if (rightArmRef.current) rightArmRef.current.rotation.z = -.16 - Math.sin(t * 1.2) * .02
       }
-      if (leftArmRef.current) leftArmRef.current.rotation.z = .16 + Math.sin(t * 1.2) * .02
-      if (rightArmRef.current) rightArmRef.current.rotation.z = -.16 - Math.sin(t * 1.2) * .02
     }
 
-    if (state === 'loading') {
+    if (state === 'loading' && interaction === 'none') {
       robot.position.y = Math.sin(t * 3) * .04
-      if (interaction === 'none') robot.rotation.y = Math.sin(t * 1.8) * .10
+      robot.rotation.y = Math.sin(t * 1.8) * .10
       if (headRef.current) {
         headRef.current.rotation.y = Math.sin(t * 2.4) * .14
         headRef.current.rotation.x = Math.sin(t * 1.7) * .045
@@ -191,9 +193,9 @@ export function Robot({ state, outfit, interaction = 'none', onPoke }: Props) {
       if (rightArmRef.current) rightArmRef.current.rotation.z = -.26 - Math.sin(t * 5 + 1) * .17
     }
 
-    if (state === 'success') {
+    if (state === 'success' && interaction === 'none') {
       robot.position.y = Math.abs(Math.sin(t * 4)) * .105
-      if (interaction === 'none') robot.rotation.y = Math.sin(t * 5) * .13
+      robot.rotation.y = Math.sin(t * 5) * .13
       robot.rotation.z = Math.sin(t * 8) * .035
       if (headRef.current) {
         headRef.current.rotation.x = -.04
@@ -203,7 +205,7 @@ export function Robot({ state, outfit, interaction = 'none', onPoke }: Props) {
       if (rightArmRef.current) rightArmRef.current.rotation.z = -1.30 - Math.sin(t * 7) * .15
     }
 
-    if (state === 'error') {
+    if (state === 'error' && interaction === 'none') {
       robot.position.y = Math.sin(t * 1.1) * .015
       robot.rotation.z = Math.sin(t * 2.2) * .02
       if (headRef.current) {
@@ -214,9 +216,9 @@ export function Robot({ state, outfit, interaction = 'none', onPoke }: Props) {
       if (rightArmRef.current) rightArmRef.current.rotation.z = -.46
     }
 
-    if (state === 'offline') {
+    if (state === 'offline' && interaction === 'none') {
       robot.position.y = Math.sin(t * 1.4) * .02
-      if (interaction === 'none') robot.rotation.y = Math.sin(t * .9) * .11
+      robot.rotation.y = Math.sin(t * .9) * .11
       if (headRef.current) {
         headRef.current.rotation.y = Math.sin(t * 1.5) * .25
         headRef.current.rotation.x = Math.sin(t * .8) * .035
@@ -225,9 +227,9 @@ export function Robot({ state, outfit, interaction = 'none', onPoke }: Props) {
       if (rightArmRef.current) rightArmRef.current.rotation.z = -.33 - Math.sin(t * 1.8) * .06
     }
 
-    if (state === 'game') {
+    if (state === 'game' && interaction === 'none') {
       robot.position.y = Math.abs(Math.sin(t * 5.2)) * .07
-      if (interaction === 'none') robot.rotation.y = Math.sin(t * 2.4) * .06
+      robot.rotation.y = Math.sin(t * 2.4) * .06
       if (headRef.current) {
         headRef.current.rotation.y = Math.sin(t * 3.2) * .07
         headRef.current.rotation.x = Math.sin(t * 4.3) * .02
@@ -258,13 +260,24 @@ export function Robot({ state, outfit, interaction = 'none', onPoke }: Props) {
     if (interaction === 'dance') {
       robot.position.x = Math.sin(t * 4.2) * .055
       robot.position.y = .05 + Math.abs(Math.sin(t * 4.4)) * .07
-      robot.rotation.y = MathUtils.lerp(robot.rotation.y, 0, .45)
-      robot.rotation.z = Math.sin(t * 7) * .11
-      if (leftArmRef.current) leftArmRef.current.rotation.z = .9 + Math.sin(t * 8) * .55
-      if (rightArmRef.current) rightArmRef.current.rotation.z = -.9 - Math.sin(t * 8 + Math.PI) * .55
+      robot.rotation.y = 0
+      robot.rotation.z = Math.sin(t * 7) * .08
+
       if (headRef.current) {
-        headRef.current.rotation.y = Math.sin(t * 4.5) * .07
-        headRef.current.rotation.z = Math.sin(t * 5) * .09
+        headRef.current.rotation.x = 0
+        headRef.current.rotation.y = 0
+        headRef.current.rotation.z = Math.sin(t * 5) * .045
+      }
+
+      if (leftArmRef.current) {
+        leftArmRef.current.rotation.x = -.42
+        leftArmRef.current.rotation.y = 0
+        leftArmRef.current.rotation.z = .78 + Math.sin(t * 8) * .38
+      }
+      if (rightArmRef.current) {
+        rightArmRef.current.rotation.x = -.42
+        rightArmRef.current.rotation.y = 0
+        rightArmRef.current.rotation.z = -.78 - Math.sin(t * 8 + Math.PI) * .38
       }
     } else {
       robot.position.x = MathUtils.lerp(robot.position.x, 0, .18)
@@ -328,7 +341,7 @@ export function Robot({ state, outfit, interaction = 'none', onPoke }: Props) {
 
     if (interaction === 'celebration') {
       robot.position.y = Math.abs(Math.sin(t * 4.5)) * .14
-      robot.rotation.y = MathUtils.lerp(robot.rotation.y, 0, .4)
+      robot.rotation.y = 0
       robot.rotation.z = Math.sin(t * 10) * .055
       if (leftArmRef.current) leftArmRef.current.rotation.z = 1.42 + Math.sin(t * 9) * .18
       if (rightArmRef.current) rightArmRef.current.rotation.z = -1.42 - Math.sin(t * 9) * .18
