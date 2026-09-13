@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { AvatarScene } from './components/AvatarScene'
 import { ExperienceSettings } from './components/ExperienceSettings'
+import { InteractionLab } from './components/InteractionLab'
 import { MiniGame } from './components/MiniGame'
 import { defaultCompanionSettings, type CompanionSettings } from './lib/companionSettings'
 import { createGuidance, type GuidanceRequest } from './lib/guidance'
+import { interactionDurations, interactionMessages, type CompanionInteraction } from './lib/interactions'
 import type { CompanionState, Outfit } from './lib/types'
 
 const stateText: Record<CompanionState, { title: string; body: string }> = {
@@ -50,10 +52,12 @@ export default function App() {
   const [guidance, setGuidance] = useState<GuidanceRequest | null>(null)
   const [settings, setSettings] = useState<CompanionSettings>(loadSettings)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [interaction, setInteraction] = useState<CompanionInteraction>('none')
   const stateRef = useRef<CompanionState>('idle')
   const requestTimer = useRef<number | null>(null)
   const longWaitTimer = useRef<number | null>(null)
   const guideTimer = useRef<number | null>(null)
+  const interactionTimer = useRef<number | null>(null)
 
   useEffect(() => { stateRef.current = state }, [state])
   useEffect(() => { window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)) }, [settings])
@@ -65,6 +69,27 @@ export default function App() {
     longWaitTimer.current = null
   }
 
+  const clearInteraction = () => {
+    if (interactionTimer.current) window.clearTimeout(interactionTimer.current)
+    interactionTimer.current = null
+    setInteraction('none')
+  }
+
+  const triggerInteraction = (next: CompanionInteraction) => {
+    if (!settings.enabled || !settings.allowInteraction) return
+    if (interactionTimer.current) window.clearTimeout(interactionTimer.current)
+    setState('idle')
+    setInteraction(next)
+    setMessage(interactionMessages[next])
+    const duration = interactionDurations[next]
+    if (duration > 0) {
+      interactionTimer.current = window.setTimeout(() => {
+        setInteraction('none')
+        setMessage('')
+      }, duration)
+    }
+  }
+
   const dismissGuidance = () => {
     if (guideTimer.current) window.clearTimeout(guideTimer.current)
     guideTimer.current = null
@@ -74,6 +99,7 @@ export default function App() {
 
   const guideTo = (request: GuidanceRequest) => {
     if (!settings.enabled) return
+    clearInteraction()
     if (guideTimer.current) window.clearTimeout(guideTimer.current)
     setGuidance(request)
     setMessage(request.type === 'approval' ? 'This approval needs you 👈' : 'I found something for you 👈')
@@ -82,16 +108,11 @@ export default function App() {
 
   const simulate = (ms: number, outcome: CompanionState = 'success') => {
     clearSimulationTimers()
+    clearInteraction()
     dismissGuidance()
     setPendingOutcome(outcome)
     setRequestComplete(false)
     setLongWait(false)
-
-    const shouldShowOverlay = settings.enabled && (
-      outcome === 'success' ||
-      (outcome === 'loading' && settings.showDuringLoading) ||
-      ((outcome === 'error' || outcome === 'offline') && settings.showOnErrors)
-    )
 
     if (settings.enabled && settings.showDuringLoading && ms >= settings.minimumWaitMs) setState('loading')
     else setState('idle')
@@ -105,7 +126,7 @@ export default function App() {
       setLongWait(false)
       if (stateRef.current !== 'game') {
         if ((outcome === 'error' || outcome === 'offline') && !settings.showOnErrors) setState('idle')
-        else if (settings.enabled || shouldShowOverlay) setState(outcome)
+        else if (settings.enabled) setState(outcome)
         else setState('idle')
       }
     }, ms)
@@ -139,13 +160,14 @@ export default function App() {
   useEffect(() => () => {
     clearSimulationTimers()
     if (guideTimer.current) window.clearTimeout(guideTimer.current)
+    if (interactionTimer.current) window.clearTimeout(interactionTimer.current)
   }, [])
 
   useEffect(() => {
-    if (!message || guidance) return
+    if (!message || guidance || interaction !== 'none') return
     const id = window.setTimeout(() => setMessage(''), 1800)
     return () => clearTimeout(id)
-  }, [message, guidance])
+  }, [message, guidance, interaction])
 
   const companionVisible = settings.enabled
   const overlayVisible = state !== 'idle' && (
@@ -155,10 +177,8 @@ export default function App() {
     ((state === 'error' || state === 'offline') && settings.showOnErrors)
   )
 
-  const personalityClass = `personality-${settings.personality}`
-
   return (
-    <div className={`appShell ${personalityClass}`}>
+    <div className={`appShell personality-${settings.personality}`}>
       <aside className="sidebar">
         <div className="brand">⬢ <span>HelpNest</span></div>
         <div className="navList">
@@ -175,7 +195,8 @@ export default function App() {
               <AvatarScene
                 state={state}
                 outfit={outfit}
-                onPoke={settings.allowInteraction ? () => setMessage(settings.personality === 'professional' ? 'How may I assist?' : settings.personality === 'playful' ? 'Hi! Want to play? 😄' : 'Hi! 👋') : undefined}
+                interaction={interaction}
+                onPoke={settings.allowInteraction ? () => triggerInteraction('wave') : undefined}
               />
             </div>
           </div>
@@ -203,7 +224,7 @@ export default function App() {
             <button onClick={() => simulate(2500, 'offline')}>Offline</button>
             <button onClick={activateGuidance}>Guide me</button>
             <button onClick={() => setSettingsOpen(true)}>Experience settings</button>
-            <button onClick={() => { clearSimulationTimers(); dismissGuidance(); setRequestComplete(false); setState('idle') }}>Reset</button>
+            <button onClick={() => { clearSimulationTimers(); clearInteraction(); dismissGuidance(); setRequestComplete(false); setState('idle') }}>Reset</button>
           </div>
           <div className="labCard">
             <h3>Avatar outfit</h3>
@@ -214,6 +235,7 @@ export default function App() {
             </select>
             <p>Click the bot to test interaction.</p>
           </div>
+          <InteractionLab active={interaction} onTrigger={triggerInteraction} />
         </section>
       </main>
 
@@ -231,7 +253,7 @@ export default function App() {
             <MiniGame outfit={outfit} requestComplete={requestComplete} onContinue={finishGame} onExit={closeGame} />
           ) : (
             <div className="modal">
-              {settings.enabled && <div className="modalAvatar"><AvatarScene state={state} outfit={outfit} onPoke={settings.allowInteraction ? () => setMessage('That tickles 😄') : undefined} /></div>}
+              {settings.enabled && <div className="modalAvatar"><AvatarScene state={state} outfit={outfit} onPoke={settings.allowInteraction ? () => triggerInteraction('wave') : undefined} /></div>}
               <h2>{stateText[state].title}</h2>
               <p>{stateText[state].body}</p>
               {state === 'loading' && <div className="progress"><div /></div>}
