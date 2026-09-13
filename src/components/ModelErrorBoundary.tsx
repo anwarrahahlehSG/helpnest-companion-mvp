@@ -1,0 +1,17 @@
+import type { ReactNode } from 'react'
+import { Component } from 'react'
+
+type Props = { children: ReactNode; fallback: ReactNode }
+type State = { failed: boolean }
+
+export class ModelErrorBoundary extends Component<Props, State> {
+  state: State = { failed: false }
+
+  static getDerivedStateFromError(): State {
+    return { failed: true }
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children
+  }
+}
